@@ -49,7 +49,7 @@ module Beaker
             if package_name
               case host['platform']
               when /windows/
-                install_msi_on(host, File.join(release_path, package_name), {}, opts)
+                generic_install_msi_on(host, File.join(release_path, package_name), {}, {:debug => true})
               else
                 copy_dir_local = File.join('tmp', 'repo_configs')
                 fetch_http_file(release_path, package_name, copy_dir_local)
@@ -58,47 +58,12 @@ module Beaker
                 if host['platform'] =~ /debian|ubuntu|cumulus|huaweios/
                   on host, "dpkg -i #{package_name}"
                 elsif host['platform'] =~ /osx/
-                  install_dmg_on(host, package_name, package_base, installer, opts)
+                  host.generic_install_dmg(package_name, package_base, installer)
                 else
                   host.install_package( package_name )
                 end
               end
             end
-          end
-          #}}}
-        end
-
-        def install_dmg_on(host, dmg_path, pkg_base, pkg_name, opts = {})
-          dmg_name = File.basename(dmg_path, '.dmg')
-          on(host, "hdiutil attach #{dmg_name}.dmg")
-          on(host, "installer -pkg /Volumes/#{pkg_base}/#{pkg_name} -target /")
-        end
-
-        def install_msi_on(hosts, msi_path, msi_opts = {}, opts = {})
-          #{{{
-          block_on hosts do | host |
-            msi_opts['PUPPET_AGENT_STARTUP_MODE'] ||= 'Manual'
-            batch_path, log_file = create_install_msi_batch_on(host, msi_path, msi_opts)
-
-            # begin / rescue here so that we can reuse existing error msg propagation
-            begin
-              # 1641 = ERROR_SUCCESS_REBOOT_INITIATED
-              # 3010 = ERROR_SUCCESS_REBOOT_REQUIRED
-              on host, Command.new("\"#{batch_path}\"", [], { :cmdexe => true }), :acceptable_exit_codes => [0, 1641, 3010]
-            rescue
-              on host, Command.new("type \"#{log_file}\"", [], { :cmdexe => true })
-              raise
-            end
-
-            if opts[:debug]
-              on host, Command.new("type \"#{log_file}\"", [], { :cmdexe => true })
-            end
-
-            if !host.is_cygwin?
-              # HACK: for some reason, post install we need to refresh the connection to make puppet available for execution
-              host.close
-            end
-
           end
           #}}}
         end
