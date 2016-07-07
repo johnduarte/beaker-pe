@@ -16,7 +16,6 @@ module Beaker
           create_remote_file(host, file, contents)
         end
 
-
         class Private
 
           extend Beaker::DSL

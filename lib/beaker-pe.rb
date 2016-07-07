@@ -12,6 +12,7 @@ module Beaker
       include Beaker::DSL::InstallUtils::PEUtils
       include Beaker::DSL::InstallUtils::PEClientTools
       include Beaker::Options::PEVersionScraper
+      include Beaker::DSL::PEClientTools::InstallHelper
       include Beaker::DSL::PEClientTools::ConfigFileHelper
       include Beaker::DSL::PEClientTools::ExecutableHelper
     end
