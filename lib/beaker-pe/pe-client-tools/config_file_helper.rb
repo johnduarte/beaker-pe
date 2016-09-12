@@ -1,4 +1,5 @@
 require "beaker/dsl/patterns"
+require "beaker-pe/pe-client-tools/utils"
 
 module Beaker
   module DSL
@@ -25,6 +26,8 @@ module Beaker
 
           extend Beaker::DSL
           extend Beaker::DSL::Patterns
+          extend Beaker::DSL::PEClientTools::Utils
+
 
           def self.file_name(tool)
             if tool =~ /orchestrator|job|app/i
@@ -49,7 +52,7 @@ module Beaker
             case config_level
 
               when /global/
-                @base_path = global_base_path(host)
+                @base_path = global_config_base_path(host)
               when /user/
                 @base_path = home_dir(host)
               else
@@ -77,15 +80,6 @@ module Beaker
             host.exec(@cmd).stdout.chomp
           end
 
-          def self.global_base_path(host)
-
-            (host.platform =~ /win/) ?host.exec(Beaker::Command.new('echo', ['%PROGRAMDATA%'], :cmdexe => true)).stdout.chomp : '/etc//'
-          end
-
-          def self.path_separator(host)
-
-            (host.platform =~ /win/) ? '\\' : '/'
-          end
         end
       end
     end
