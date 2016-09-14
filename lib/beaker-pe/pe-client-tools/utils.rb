@@ -19,6 +19,17 @@ module Beaker
           client_tools_dir = client_tools_path_array.unshift(base_path).join(path_separator(host))
         end
 
+        def get_tools_bin_path(host)
+          if host.platform =~ /win/
+            basepath = host.exec(Beaker::Command.new('echo', ['%PROGRAMFILES%'], :cmdexe => true)).stdout.chomp
+            path = [ basepath, 'Puppet Labs', 'Client', 'tools', 'bin' ].join(path_separator(host))
+          else
+            basepath = '/opt'
+            path = [ basepath, 'puppetlabs', 'client-tools', 'bin' ].join(path_separator(host))
+          end
+          return path
+        end
+
         def global_config_base_path(host)
 
           (host.platform =~ /win/) ?host.exec(Beaker::Command.new('echo', ['%PROGRAMDATA%'], :cmdexe => true)).stdout.chomp : '/etc//'

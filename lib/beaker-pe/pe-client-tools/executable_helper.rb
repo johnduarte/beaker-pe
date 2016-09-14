@@ -95,10 +95,13 @@ module Beaker
 
         class Private
 
+          require "beaker-pe/pe-client-tools/utils"
+
           include Beaker::DSL
           include Beaker::DSL::Wrappers
           include Beaker::DSL::Helpers::HostHelpers
           include Beaker::DSL::Patterns
+          include  Beaker::DSL::PEClientTools::Utils
 
           attr_accessor :logger
 
@@ -109,22 +112,20 @@ module Beaker
             options = {}
             options.merge!(args.pop) if args.last.is_a?(Hash)
 
-            if host.platform =~ /win/i
+            client_tools_dir = get_tools_bin_path(host)
+            tool_executable = [ client_tools_dir, "puppet-#{tool.to_s}" ].join(path_separator(host))
 
-              program_files = host.exec(Beaker::Command.new('echo', ['%PROGRAMFILES%'], :cmdexe => true)).stdout.chomp
-              client_tools_dir = "#{program_files}\\#{['Puppet Labs', 'Client', 'tools', 'bin'].join('\\')}\\"
-              tool_executable = "\"#{client_tools_dir}puppet-#{tool.to_s}.exe\""
+            if host.platform =~ /win/i
 
               #TODO does this need to be more detailed to pass exit codes????
               # TODO make batch file direct output to separate file
               batch_contents =<<-EOS
-call #{tool_executable} #{args.join(' ')}
+call "#{tool_executable}.exe" #{args.join(' ')}
               EOS
 
               @command = build_win_batch_command( host, batch_contents, {:cmdexe => true})
             else
 
-              tool_executable = '/opt/puppetlabs/client-tools/bin/' << "puppet-#{tool.to_s}"
               @command = Beaker::Command.new(tool_executable, args, {:cmdexe => true})
             end
 

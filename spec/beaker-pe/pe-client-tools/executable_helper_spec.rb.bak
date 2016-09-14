@@ -1,6 +1,5 @@
 require 'spec_helper'
-require 'scooter'
-#require 'beaker'
+require 'beaker'
 
 #{{{
 class MockResult
@@ -34,18 +33,18 @@ describe Beaker::DSL::PEClientTools::ExecutableHelper::Private do
 end
 #}}}
 
-
-class MixedWithExecutableHelper
-  include Beaker::DSL::PEClientTools::ExecutableHelper
-end
-  describe MixedWithExecutableHelper do
+describe Beaker::DSL::PEClientTools::ExecutableHelper do
+  before do
+    @object = Object.new
+    @object.extend(Beaker::DSL::PEClientTools::ExecutableHelper)
+  end
 
   let(:method_name)   { "puppet_#{tool}_on"}
 
-  shared_examples 'pe-client-tool' do
+  shared_examples 'pe-client-tool'do
 
     it 'has a method to execute the tool' do
-      expect(subject).to respond_to(method_name)
+      expect(@object).to respond_to(method_name)
     end
   end
 
@@ -61,8 +60,7 @@ end
           allow(host).to receive(:exec)
           expect(host).to receive(:build_win_batch_command).never
           expect(Beaker::Command).to receive(:new).with("/opt/puppetlabs/client-tools/bin/puppet-code", [], { :cmdexe => true})
-          #expect(subject.send(method_name, host))
-          subject.puppet_code_on(host)
+          expect(@object.send(method_name, host))
         end
       end
     context 'on windows' do
@@ -71,10 +69,9 @@ end
           host =  Beaker::Host.create('host', platform, make_host_opts('host', platform))
           allow(host).to receive(:exec).and_return(MockResult.new('C:\ProgramData'))
           expect(host).to receive(:build_win_batch_command)
-          allow(instance_of(Private)).to receive(:create_remote_file).and_return(0)
+          expect(@object).to receive(:create_remote_file).with(host,/ProgramData/i, 'some file content')
           expect(Beaker::Command).to receive(:new).with("echo", ["%PROGRAMFILES%"], {:cmdexe=>true})
-          #expect(subject.send(method_name, host))
-          subject.puppet_code_on(host)
+          expect(@object.send(method_name, host))
       end
     end
       #}}}
@@ -111,30 +108,6 @@ end
   end
 
   it 'has a method to login with puppet access' do
-    expect(subject).to respond_to('login_with_puppet_access_on')
-  end
-
-  context 'puppet access login with lifetime parameter' do
-    let(:logger) {Beaker::Logger.new}
-    let(:test_host) {Beaker::Host.create('my_super_host',
-                                         {:roles => ['master', 'agent'],
-                                          :platform => 'linux',
-                                          :type => 'pe'},
-                                          make_opts)}
-    let(:username) {'T'}
-    let(:password) {'Swift'}
-    let(:credentials) {{:login => username, :password => password}}
-    let(:test_dispatcher) {Scooter::HttpDispatchers::ConsoleDispatcher.new('my_super_host', credentials)}
-
-    before do
-      allow(logger).to receive(:debug) { true }
-      expect(test_dispatcher).to be_kind_of(Scooter::HttpDispatchers::ConsoleDispatcher)
-      expect(test_host).to be_kind_of(Beaker::Host)
-      expect(test_host).to receive(:exec)
-    end
-
-    it 'accepts correct value' do
-      expect{subject.login_with_puppet_access_on(test_host, test_dispatcher, {:lifetime => '5d'})}.not_to raise_error
-    end
+    expect(@object).to respond_to('login_with_puppet_access_on')
   end
 end
