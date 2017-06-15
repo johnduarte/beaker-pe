@@ -19,7 +19,7 @@ group :acceptance_testing do
 end
 
 if ENV['GEM_SOURCE'] =~ /rubygems\.delivery\.puppetlabs\.net/
-  gem "scooter", *location_for(ENV['SCOOTER_VERSION'] || '~> 3.0')
+  gem "scooter", *location_for(ENV['SCOOTER_VERSION'] || '~> 4.0')
 end
 
 if File.exists? "#{__FILE__}.local"

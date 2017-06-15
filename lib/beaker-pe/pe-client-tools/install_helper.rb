@@ -1,19 +1,63 @@
+require "beaker/dsl/install_utils/foss_utils"
+
 module Beaker
   module DSL
     module InstallUtils
       module PEClientTools
+        include FOSSUtils
+
+        def get_artifact_release_options(host, product, sha, product_version, download_url, puppet_collection)
+          options = {}
+          common_artifacts_url = "#{download_url}/#{product}/#{sha}/artifacts"
+
+          variant, version, arch, codename = host['platform'].to_array
+
+          package_name = nil
+          case host['platform']
+          when /el-|fedora|sles|centos|cisco_/
+            release_path = "#{common_artifacts_url}/#{variant}/#{version}/#{puppet_collection}/#{arch}"
+            package_name = product.dup
+            package_name << "-#{product_version}-1.#{variant}#{version}.#{arch}.rpm"
+          when /debian|ubuntu|cumulus|huaweios/
+            release_path = "#{common_artifacts_url}/deb/#{codename}/#{puppet_collection}"
+            package_name = product.dup
+            package_name << "_#{product_version}-1#{host['platform'].codename}_#{arch}.deb"
+          when /windows/
+            release_path = "#{common_artifacts_url}/#{variant}"
+            package_name = product.dup
+            package_name << "-#{product_version}-x#{arch}.msi"
+          when /osx/
+            release_path = "#{common_artifacts_url}/apple/#{version}/#{puppet_collection}/#{arch}"
+            package_base = product.dup
+            package_base << "-#{product_version}"
+            package_name = package_base.dup
+            package_name << '-1'
+            installer    = package_name + '-installer.pkg'
+            package_name << ".#{variant}#{version}.dmg"
+          else
+            raise "get_artifact_release_options() called for unsupported " +
+              "platform '#{host['platform']}' on '#{host.name}'"
+          end
+
+          options[:release_path] = release_path
+          options[:package_name] = package_name
+          options[:osx_package_base] = package_base
+          options[:osx_installer] = installer
+          return options
+        end
 
         def install_pe_client_tools_on(hosts, opts = {})
           product = 'pe-client-tools'
-          required_keys = [:puppet_collection, :pe_client_tools_sha, :pe_client_tools_version]
+          required_keys = [:puppet_collection, :pe_client_tools_sha]
 
           unless required_keys.all? { |opt| opts.keys.include?(opt) && opts[opt]}
             raise ArgumentError, "The keys #{required_keys.to_s} are required in the opts hash"
           end
-          urls = { :dev_builds_url   => "http://builds.delivery.puppetlabs.net",
-          }
+          # assume version is the same as the SHA if not provided.
+          # this is the case for released tags.
+          opts[:pe_client_tools_version] ||= opts[:pe_client_tools_sha]
+          opts = FOSS_DEFAULT_DOWNLOAD_URLS.merge(opts)
 
-          opts = urls.merge(opts)
           block_on hosts do |host|
             variant, version, arch, codename = host['platform'].to_array
             package_name = ''

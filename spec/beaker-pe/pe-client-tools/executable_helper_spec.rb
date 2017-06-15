@@ -1,6 +1,6 @@
 require 'spec_helper'
+require 'beaker'
 require 'scooter'
-#require 'beaker'
 
 #{{{
 class MockResult
@@ -124,7 +124,7 @@ end
     let(:username) {'T'}
     let(:password) {'Swift'}
     let(:credentials) {{:login => username, :password => password}}
-    let(:test_dispatcher) {Scooter::HttpDispatchers::ConsoleDispatcher.new('my_super_host', credentials)}
+    let(:test_dispatcher) {Scooter::HttpDispatchers::ConsoleDispatcher.new(test_host, credentials)}
 
     before do
       allow(logger).to receive(:debug) { true }
